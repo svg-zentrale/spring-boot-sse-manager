@@ -65,7 +65,7 @@ github {
 pom {
     developers {
         developer {
-            id 'marvinosswald'
+            id 'svg-zentrale'
             name 'Marvin Oßwald'
             email 'm.osswald@svg.de'
         }
@@ -86,7 +86,7 @@ bintray {
     dryRun = false
     publish = true
     pkg {
-        repo = 'spring-boot-sse-manager'
+        repo = 'maven'
         name = project.name
         desc = project.description
         labels = ['spring', 'spring boot', 'sse']
