@@ -89,6 +89,7 @@ bintray {
         repo = 'maven'
         name = project.name
         desc = project.description
+        userOrg = findProperty('bintray.org')
         labels = ['spring', 'spring boot', 'sse']
         publicDownloadNumbers = true
         version {
