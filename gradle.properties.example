@@ -1,0 +1,9 @@
+version=0.1.0-SNAPSHOT
+
+bintray.user=
+bintray.key=
+
+gpg.passphrase=
+
+sonatype.user=
+sonatype.password=
