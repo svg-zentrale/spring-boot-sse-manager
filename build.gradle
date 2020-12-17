@@ -65,7 +65,7 @@ github {
 pom {
     developers {
         developer {
-            id 'svg-zentrale'
+            id 'marvinosswald'
             name 'Marvin Oßwald'
             email 'm.osswald@svg.de'
         }
