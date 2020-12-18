@@ -3,54 +3,60 @@ package de.svg.spring_boot_sse_manager;
 import de.svg.spring_boot_sse_manager.dto.ErrorPayload;
 import de.svg.spring_boot_sse_manager.dto.Event;
 import de.svg.spring_boot_sse_manager.dto.EventType;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 /**
- * SSEManager.
+ * SSE stream.
  */
 @Slf4j
-public class SSEManager {
+public class SSEStream extends SseEmitter {
     private static final int MAX_INFO_LENGTH = 30;
     private static final int MAX_DEBUG_LENGTH = 255;
     private static final String MESSAGE_TO_LONG_ERROR_MESSAGE = "message is too long, max size is ";
+    private Future<?> callbackFuture;
+    private boolean timeoutTriggered = false;
 
-    @Getter
-    private final SseEmitter emitter;
     private Integer runningId = 0;
     private Timer timer;
 
-    public SSEManager() {
-        emitter = new SseEmitter();
-        startHeartBeat();
+
+    public SSEStream(final Consumer<SSEStream> callback) {
+        super();
+        onTimeout(this::handleTimeout);
+        onCompletion(this::cancelHeartbeat);
+        run(callback);
     }
 
-    public SSEManager(final Long timeout) {
-        emitter = new SseEmitter(timeout);
-        startHeartBeat();
+    public SSEStream(final Consumer<SSEStream> callback, final Long timeout) {
+        super(timeout);
+        onTimeout(this::handleTimeout);
+        onCompletion(this::cancelHeartbeat);
+        run(callback);
     }
 
     public void debug(final String message) {
-
         if (message.length() < MAX_DEBUG_LENGTH) {
             log.debug("send debug event with message: " + message);
-            send(new Event(EventType.DEBUG, message).get());
+            sendEvent(new Event(EventType.DEBUG, message).get());
         } else {
             throw new InvalidParameterException(MESSAGE_TO_LONG_ERROR_MESSAGE + MAX_DEBUG_LENGTH);
         }
     }
 
     public void info(final String message) {
-
         if (message.length() < MAX_INFO_LENGTH) {
             log.debug("send info event with message: " + message);
-            send(new Event(EventType.INFO, message).get());
+            sendEvent(new Event(EventType.INFO, message).get());
         } else {
             throw new InvalidParameterException(MESSAGE_TO_LONG_ERROR_MESSAGE + MAX_INFO_LENGTH);
         }
@@ -58,34 +64,48 @@ public class SSEManager {
 
     public void info() {
         log.debug("send info event");
-        send(new Event(EventType.INFO).get());
+        sendEvent(new Event(EventType.INFO).get());
     }
 
     public void done(final Object result) {
         log.debug("send done event with object: " + result.toString());
-        send(new Event(EventType.DONE, result).get());
+        sendEvent(new Event(EventType.DONE, result).get());
         cancelHeartbeat();
-        emitter.complete();
+        complete();
     }
 
     public void error(final Integer status, final Throwable error) {
         final String message = error.getMessage();
         log.error("send error event with message: " + message);
         final ErrorPayload payload = ErrorPayload.builder().status(status).details(message).build();
-        send(new Event(EventType.ERROR, payload).get());
+        sendEvent(new Event(EventType.ERROR, payload).get());
         cancelHeartbeat();
-        emitter.completeWithError(error);
+        completeWithError(error);
     }
 
 
-    public void send(final SseEmitter.SseEventBuilder builder) {
+    public void sendEvent(final SseEmitter.SseEventBuilder builder) {
         synchronized (this) {
             try {
-                emitter.send(builder.id((++runningId).toString()));
+                send(builder.id((++runningId).toString()));
             } catch (IOException ex) {
-                log.error(ex.getMessage());
+                log.error("IO Exception" + ex.getMessage());
             }
         }
+    }
+
+
+    private void run(final Consumer<SSEStream> callback) {
+        startHeartBeat();
+        callbackFuture = Executors.newSingleThreadExecutor().submit(() -> {
+            try {
+                callback.accept(this);
+            } catch (Throwable throwable) {
+                if (!timeoutTriggered) {
+                    error(500, throwable);
+                }
+            }
+        });
     }
 
     /**
@@ -96,7 +116,7 @@ public class SSEManager {
 
             @Override
             public void run() {
-                send(new Event(EventType.HEARTBEAT).get());
+                sendEvent(new Event(EventType.HEARTBEAT).get());
             }
         };
 
@@ -104,10 +124,16 @@ public class SSEManager {
         timer.scheduleAtFixedRate(task, 0, 15_000);
     }
 
-    public void cancelHeartbeat() {
+    private void cancelHeartbeat() {
         synchronized (this) {
             timer.cancel();
         }
+    }
+
+    private void handleTimeout() {
+        timeoutTriggered = true;
+        log.error("timeout @ " + getTimeout());
+        callbackFuture.cancel(true);
     }
 
 }
