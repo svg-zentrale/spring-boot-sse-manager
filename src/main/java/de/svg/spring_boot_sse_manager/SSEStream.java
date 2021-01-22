@@ -4,7 +4,6 @@ import de.svg.spring_boot_sse_manager.dto.ErrorPayload;
 import de.svg.spring_boot_sse_manager.dto.Event;
 import de.svg.spring_boot_sse_manager.dto.EventType;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -24,7 +23,7 @@ public class SSEStream extends SseEmitter {
     private static final int MAX_DEBUG_LENGTH = 255;
     private static final String MESSAGE_TO_LONG_ERROR_MESSAGE = "message is too long, max size is ";
     private Future<?> callbackFuture;
-    private boolean timeoutTriggered = false;
+    private boolean timeoutTriggered;
 
     private Integer runningId = 0;
     private Timer timer;
