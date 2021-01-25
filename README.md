@@ -6,11 +6,11 @@
 
 ### About
 
-SSEEmitter wrapped in some goodies for progress and keep-alive
+SSEEmitter wrapped in some goodies for info and keep-alive
 
 Features:
-* Feature 1
-* Feature 2
+* Heartbeat
+* Info / Debug / Error / Done Events
 
 ### Setup
  
@@ -26,14 +26,14 @@ Maven:
 <dependency>
   <groupId>de.svg</groupId>
   <artifactId>spring-boot-sse-manager</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.14</version>
 </dependency>
 ```
 
 Gradle:
 
 ```groovy
-implementation 'de.svg:spring-boot-sse-manager:0.1.0'
+implementation 'de.svg:spring-boot-sse-manager:0.1.14'
 ```
 
 ##### Snapshots
@@ -46,4 +46,29 @@ You can use snapshot versions through [JitPack](https://jitpack.io):
 
 ### Usage
 
----
+#### Parallel Tasks 
+
+```java
+@GetMapping(path = "/stream")
+public SseEmitter downloadLink() {
+        return new SSEStream((SSEStream stream) -> {
+            List<Integer> collect = Stream.of(1, 2, 3)
+                .map(integer -> ((Callable<Integer>) (() -> {
+                    stream.info("This Service is working on number: " + integer);
+                    return integer;
+                })
+            ))
+            .map(asyncTaskExecutor::submit)
+            .map(future -> {
+                try {
+                    return future.get();
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            })
+            .collect(Collectors.toList());
+            stream.done(collect);
+
+        }, 30000L);
+}
+```
