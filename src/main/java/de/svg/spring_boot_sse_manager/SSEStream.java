@@ -2,6 +2,7 @@ package de.svg.spring_boot_sse_manager;
 
 import de.svg.spring_boot_sse_manager.dto.ErrorPayload;
 import de.svg.spring_boot_sse_manager.dto.Event;
+import de.svg.spring_boot_sse_manager.dto.EventMessagePayload;
 import de.svg.spring_boot_sse_manager.dto.EventType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -45,25 +46,26 @@ public class SSEStream extends SseEmitter {
 
     public void debug(final String message) {
         if (message.length() < MAX_DEBUG_LENGTH) {
-            log.debug("send debug event with message: " + message);
-            sendEvent(new Event(EventType.DEBUG, message).get());
+            sendEvent(EventType.DEBUG, message);
         } else {
             throw new InvalidParameterException(MESSAGE_TO_LONG_ERROR_MESSAGE + MAX_DEBUG_LENGTH);
         }
     }
 
+    public void debug(final Object message) {
+        sendEvent(EventType.DEBUG, message);
+    }
+
     public void info(final String message) {
         if (message.length() < MAX_INFO_LENGTH) {
-            log.debug("send info event with message: " + message);
-            sendEvent(new Event(EventType.INFO, message).get());
+            sendEvent(EventType.INFO, message);
         } else {
             throw new InvalidParameterException(MESSAGE_TO_LONG_ERROR_MESSAGE + MAX_INFO_LENGTH);
         }
     }
 
-    public void info() {
-        log.debug("send info event");
-        sendEvent(new Event(EventType.INFO).get());
+    public void info(final Object message) {
+        sendEvent(EventType.INFO, message);
     }
 
     public void done(final Object result) {
@@ -82,6 +84,15 @@ public class SSEStream extends SseEmitter {
         completeWithError(error);
     }
 
+    private void sendEvent(final EventType type, final String message) {
+        log.debug(type.toString() + " event with message: " + message);
+        sendEvent(new Event(type, EventMessagePayload.builder().message(message).build()).get());
+    }
+
+    private void sendEvent(final EventType type, final Object payload) {
+        log.debug(type.toString() + " event with payload: " + payload.toString());
+        sendEvent(new Event(type, payload).get());
+    }
 
     public void sendEvent(final SseEmitter.SseEventBuilder builder) {
         synchronized (this) {

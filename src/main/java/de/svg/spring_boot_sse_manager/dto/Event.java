@@ -43,12 +43,10 @@ public class Event {
         setPayload(payload);
         setEventName(eventName);
         setDate(new Date());
-
-        final SseEventBuilder builder = SseEmitter
+        setBuilder(SseEmitter
                 .event()
                 .name(getEventName().toString())
                 .comment(getDate().toString())
-                .data(getPayload(), MediaType.APPLICATION_JSON);
-        setBuilder(builder);
+                .data(getPayload(), MediaType.APPLICATION_JSON));
     }
 }
