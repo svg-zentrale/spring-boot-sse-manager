@@ -109,7 +109,7 @@ bintray {
                 passphrase = findProperty('gpg.passphrase')
             }
             mavenCentralSync {
-                sync = false
+                sync = true
                 user = findProperty('sonatype.user')
                 password = findProperty('sonatype.password')
             }
