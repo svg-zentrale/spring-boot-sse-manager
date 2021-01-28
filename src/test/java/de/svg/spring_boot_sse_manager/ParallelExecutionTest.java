@@ -2,6 +2,7 @@ package de.svg.spring_boot_sse_manager;
 
 import lombok.RequiredArgsConstructor;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.AsyncTaskExecutor;
 
 import java.util.List;
@@ -12,9 +13,10 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class ParallelExecutionTest {
 
+    @Autowired
     private AsyncTaskExecutor asyncTaskExecutor;
 
-    @Test
+    //@Test
     public void multiAsyncTest() {
         new SSEStream((SSEStream stream) -> {
             List<Integer> collect = Stream.of(1, 2, 3)
@@ -41,6 +43,6 @@ public class ParallelExecutionTest {
                     ).collect(Collectors.toList());
             stream.done(collect);
 
-        }, 30000L);
+        }, 30000L, asyncTaskExecutor);
     }
 }

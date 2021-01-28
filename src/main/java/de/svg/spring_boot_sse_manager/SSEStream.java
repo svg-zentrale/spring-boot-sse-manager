@@ -5,13 +5,13 @@ import de.svg.spring_boot_sse_manager.dto.Event;
 import de.svg.spring_boot_sse_manager.dto.EventMessagePayload;
 import de.svg.spring_boot_sse_manager.dto.EventType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -28,17 +28,20 @@ public class SSEStream extends SseEmitter {
 
     private Integer runningId = 0;
     private Timer timer;
+    private final AsyncTaskExecutor taskExecutor;
 
 
-    public SSEStream(final Consumer<SSEStream> callback) {
+    public SSEStream(final Consumer<SSEStream> callback, final AsyncTaskExecutor taskExecutor) {
         super();
+        this.taskExecutor = taskExecutor;
         onTimeout(this::handleTimeout);
         onCompletion(this::cancelHeartbeat);
         run(callback);
     }
 
-    public SSEStream(final Consumer<SSEStream> callback, final Long timeout) {
+    public SSEStream(final Consumer<SSEStream> callback, final Long timeout, final AsyncTaskExecutor taskExecutor) {
         super(timeout);
+        this.taskExecutor = taskExecutor;
         onTimeout(this::handleTimeout);
         onCompletion(this::cancelHeartbeat);
         run(callback);
@@ -107,7 +110,7 @@ public class SSEStream extends SseEmitter {
 
     private void run(final Consumer<SSEStream> callback) {
         startHeartBeat();
-        callbackFuture = Executors.newSingleThreadExecutor().submit(() -> {
+        callbackFuture = this.taskExecutor.submit(() -> {
             try {
                 callback.accept(this);
             } catch (Throwable throwable) {
