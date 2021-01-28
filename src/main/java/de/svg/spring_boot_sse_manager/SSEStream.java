@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -28,7 +29,21 @@ public class SSEStream extends SseEmitter {
 
     private Integer runningId = 0;
     private Timer timer;
-    private final AsyncTaskExecutor taskExecutor;
+    private AsyncTaskExecutor taskExecutor = null;
+
+    public SSEStream(final Consumer<SSEStream> callback) {
+        super();
+        onTimeout(this::handleTimeout);
+        onCompletion(this::cancelHeartbeat);
+        run(callback);
+    }
+
+    public SSEStream(final Consumer<SSEStream> callback, final Long timeout) {
+        super(timeout);
+        onTimeout(this::handleTimeout);
+        onCompletion(this::cancelHeartbeat);
+        run(callback);
+    }
 
 
     public SSEStream(final Consumer<SSEStream> callback, final AsyncTaskExecutor taskExecutor) {
@@ -110,15 +125,27 @@ public class SSEStream extends SseEmitter {
 
     private void run(final Consumer<SSEStream> callback) {
         startHeartBeat();
-        callbackFuture = this.taskExecutor.submit(() -> {
-            try {
-                callback.accept(this);
-            } catch (Throwable throwable) {
-                if (!timeoutTriggered) {
-                    error(500, throwable);
+        if (this.taskExecutor != null){
+            callbackFuture = this.taskExecutor.submit(() -> {
+                try {
+                    callback.accept(this);
+                } catch (Throwable throwable) {
+                    if (!timeoutTriggered) {
+                        error(500, throwable);
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            callbackFuture = Executors.newSingleThreadExecutor().submit(() -> {
+                try {
+                    callback.accept(this);
+                } catch (Throwable throwable) {
+                    if (!timeoutTriggered) {
+                        error(500, throwable);
+                    }
+                }
+            });
+        }
     }
 
     /**

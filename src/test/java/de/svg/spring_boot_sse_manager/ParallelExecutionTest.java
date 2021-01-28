@@ -43,6 +43,6 @@ public class ParallelExecutionTest {
                     ).collect(Collectors.toList());
             stream.done(collect);
 
-        }, 30000L, asyncTaskExecutor);
+        }, 30000L);
     }
 }
