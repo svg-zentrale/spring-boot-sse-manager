@@ -29,7 +29,7 @@ public class SSEStream extends SseEmitter {
 
     private Integer runningId = 0;
     private Timer timer;
-    private AsyncTaskExecutor taskExecutor = null;
+    private AsyncTaskExecutor taskExecutor;
 
     public SSEStream(final Consumer<SSEStream> callback) {
         super();
@@ -125,7 +125,7 @@ public class SSEStream extends SseEmitter {
 
     private void run(final Consumer<SSEStream> callback) {
         startHeartBeat();
-        if (this.taskExecutor != null){
+        if (this.taskExecutor != null) {
             callbackFuture = this.taskExecutor.submit(() -> {
                 try {
                     callback.accept(this);
