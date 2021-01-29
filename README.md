@@ -14,7 +14,7 @@ Features:
 
 ### Setup
  
-Releases are published to [bintray jcenter](https://bintray.com/marvinosswald/spring-boot-sse-manager/spring-boot-sse-manager/) and 
+Releases are published to [bintray jcenter](https://bintray.com/svg-zentrale/maven/spring-boot-sse-manager) and 
 [maven central](https://maven-badges.herokuapp.com/maven-central/de.svg/spring-boot-sse-manager) 
 
 ![Bintray](https://img.shields.io/bintray/v/svg-zentrale/maven/spring-boot-sse-manager)
