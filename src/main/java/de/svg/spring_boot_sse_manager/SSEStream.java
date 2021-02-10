@@ -5,6 +5,7 @@ import de.svg.spring_boot_sse_manager.dto.Event;
 import de.svg.spring_boot_sse_manager.dto.EventMessagePayload;
 import de.svg.spring_boot_sse_manager.dto.EventType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -75,11 +76,10 @@ public class SSEStream extends SseEmitter {
     }
 
     public void info(final String message) {
-        if (message.length() < MAX_INFO_LENGTH) {
-            sendEvent(EventType.INFO, message);
-        } else {
-            throw new InvalidParameterException(MESSAGE_TO_LONG_ERROR_MESSAGE + MAX_INFO_LENGTH);
+        if (message.length() > MAX_INFO_LENGTH) {
+            log.warn("info call only allows messages up to " + MAX_INFO_LENGTH + " chars and abbreviates the rest.");
         }
+        sendEvent(EventType.INFO, StringUtils.abbreviate(message, MAX_INFO_LENGTH));
     }
 
     public void info(final Object message) {

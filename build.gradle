@@ -53,6 +53,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.11'
 
     testImplementation 'ch.qos.logback:logback-classic:1.2.3'
     testImplementation "org.slf4j:jul-to-slf4j:$slf4j"
